@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harvest — track what you eat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="wordmark">
+  <span class="wordmark-mark">◆</span> Harvest
+</div>
+
+<!-- ===================== AUTH VIEW ===================== -->
+<main id="auth-view" class="auth-shell">
+  <div class="auth-card">
+    <h1 class="auth-title">Know exactly<br>what's on your plate.</h1>
+    <p class="auth-sub">Log meals, hit your targets, build recipes from what's in your kitchen.</p>
+
+    <div class="tab-row">
+      <button class="tab-btn is-active" data-tab="login">Log in</button>
+      <button class="tab-btn" data-tab="signup">Sign up</button>
+    </div>
+
+    <form id="login-form" class="auth-form">
+      <label>Email
+        <input type="email" id="login-email" required autocomplete="email">
+      </label>
+      <label>Password
+        <input type="password" id="login-password" required autocomplete="current-password">
+      </label>
+      <button type="submit" class="btn-primary">Log in</button>
+      <p class="form-msg" id="login-msg"></p>
+    </form>
+
+    <form id="signup-form" class="auth-form" hidden>
+      <label>Email
+        <input type="email" id="signup-email" required autocomplete="email">
+      </label>
+      <label>Password <span class="hint">(min 6 characters)</span>
+        <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
+      </label>
+      <button type="submit" class="btn-primary">Create account</button>
+      <p class="form-msg" id="signup-msg"></p>
+    </form>
+  </div>
+</main>
+
+<!-- ===================== APP VIEW ===================== -->
+<main id="app-view" class="app-shell" hidden>
+
+  <header class="app-header">
+    <div>
+      <p class="eyebrow">Today</p>
+      <h1 id="today-date" class="app-title"></h1>
+    </div>
+    <button id="logout-btn" class="btn-ghost">Log out</button>
+  </header>
+
+  <section class="rings-row" aria-label="Today's totals">
+    <div class="ring-card">
+      <div class="ring" id="ring-cal" style="--pct:0"><span id="ring-cal-val">0</span></div>
+      <p class="ring-label">Calories</p>
+      <p class="ring-goal"><span id="ring-cal-goal">2000</span> goal</p>
+    </div>
+    <div class="ring-card">
+      <div class="ring ring-protein" id="ring-protein" style="--pct:0"><span id="ring-protein-val">0</span>g</div>
+      <p class="ring-label">Protein</p>
+      <p class="ring-goal"><span id="ring-protein-goal">150</span>g goal</p>
+    </div>
+    <div class="ring-card">
+      <div class="ring ring-sugar" id="ring-sugar" style="--pct:0"><span id="ring-sugar-val">0</span>g</div>
+      <p class="ring-label">Sugar</p>
+      <p class="ring-goal">under <span id="ring-sugar-goal">50</span>g</p>
+    </div>
+  </section>
+
+  <button id="goals-toggle" class="link-btn">Edit daily goals</button>
+  <form id="goals-form" class="goals-form" hidden>
+    <label>Calories <input type="number" id="goal-cal" min="0"></label>
+    <label>Protein (g) <input type="number" id="goal-protein" min="0"></label>
+    <label>Sugar limit (g) <input type="number" id="goal-sugar" min="0"></label>
+    <button type="submit" class="btn-secondary">Save goals</button>
+  </form>
+
+  <section class="log-section">
+    <h2 class="section-title">Add a food</h2>
+    <form id="food-form" class="food-form">
+      <label class="grow">Food name
+        <input type="text" id="food-name" placeholder="e.g. Grilled chicken breast" required>
+      </label>
+      <label>Meal
+        <select id="food-meal">
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+          <option value="snack">Snack</option>
+        </select>
+      </label>
+      <label>Calories
+        <input type="number" id="food-cal" min="0" step="1" required>
+      </label>
+      <label>Protein (g)
+        <input type="number" id="food-protein" min="0" step="0.1" required>
+      </label>
+      <label>Sugar (g)
+        <input type="number" id="food-sugar" min="0" step="0.1" required>
+      </label>
+      <button type="submit" class="btn-primary food-submit">Add to log</button>
+    </form>
+    <p class="form-msg" id="food-msg"></p>
+  </section>
+
+  <section class="log-section">
+    <h2 class="section-title">Today's log</h2>
+    <div id="log-list" class="log-list">
+      <p class="empty-state">Nothing logged yet today — add your first meal above.</p>
+    </div>
+  </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
+</body>
+</html>
