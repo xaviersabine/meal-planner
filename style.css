@@ -163,6 +163,140 @@ input:focus, select:focus, button:focus-visible {
 
 .test-marker { color: red; }
 
+.section-sub {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+    margin: -0.5rem 0 1rem;
+}
+
+.meal-name-label {
+    margin-bottom: 1rem;
+}
+
+.ingredient-search {
+    display: flex;
+    gap: 0.75rem;
+    align-items: end;
+    margin-bottom: 0.4rem;
+}
+.ingredient-search .grow { flex: 1; }
+
+.hint-line {
+    font-size: 0.78rem;
+    color: var(--ink-soft);
+    margin: 0 0 1rem;
+}
+
+.ingredient-results {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.result-row {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.result-row-name { flex: 1; }
+.result-row-macros { color: var(--ink-soft); font-size: 0.78rem; white-space: nowrap; }
+
+.meal-ingredients-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.ingredient-row {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.65rem 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+}
+
+.ingredient-row-name { flex: 1; font-weight: 600; }
+
+.ingredient-row-grams {
+    width: 70px;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.ingredient-row-macros {
+    color: var(--ink-soft);
+    font-size: 0.78rem;
+    white-space: nowrap;
+}
+
+.meal-totals {
+    display: flex;
+    gap: 1.5rem;
+    background: #F6F5EC;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+}
+
+.saved-meal-item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.85rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.saved-meal-main { display: flex; flex-direction: column; gap: 0.15rem; }
+.saved-meal-name { font-weight: 600; font-size: 0.95rem; }
+.saved-meal-macros { font-size: 0.78rem; color: var(--ink-soft); }
+
+.saved-meal-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.saved-meal-actions select {
+    padding: 0.4rem 0.5rem;
+    font-size: 0.8rem;
+}
+
+.btn-small {
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.4rem 0.75rem;
+    font-weight: 600;
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+.btn-small:hover { background: var(--primary-dark); }
+
+@media (max-width: 520px) {
+    .ingredient-search { flex-direction: column; align-items: stretch; }
+    .meal-totals { flex-wrap: wrap; gap: 0.75rem; }
+}
+
+
 .form-msg {
   font-size: 0.85rem;
   min-height: 1.2em;
