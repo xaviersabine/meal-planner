@@ -1,9 +1,12 @@
-——··×…—··—··×—··×// ============ SUPABASE SETUP ============
+// ============ SUPABASE SETUP ============
 // These two values connect the app to your Supabase project.
 const SUPABASE_URL = "https://pxgixzbwnwwfcvsyfykg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Z2l4emJ3bnd3ZmN2c3lmeWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwMTMyMDcsImV4cCI6MjEwMDU4OTIwN30.FTjwN7JRYkMeVtFCuGeLskeUNxMPc6PNnW90YxkAmEk";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// USDA FoodData Central - used to look up real nutrition per ingredient
+const USDA_API_KEY = "YnOBdMvMKdvL4t0eKREQtfrERtcbFePw03s9H5XH";
 
 // ============ STATE ============
 let currentUser = null;
@@ -94,6 +97,7 @@ function renderAuthState() {
     });
     loadGoals();
     loadTodayLog();
+    loadSavedMeals();
   } else {
     authView.hidden = false;
     appView.hidden = true;
@@ -115,242 +119,6 @@ function loadGoals() {
 goalsToggle.addEventListener("click", () => {
   goalsForm.hidden = !goalsForm.hidden;
 });
-
-// USDA FoodData Central — used to look up real nutrition per ingredient
-const USDA_API_KEY = "YnOBdMvMKdvL4t0eKREQtfrERtcbFePw03s9H5XH";
-
-// Also load saved meals whenever the user logs in
-supabaseClient.auth.onAuthStateChange((_event, session) => {
-    if (session?.user) loadSavedMeals();
-});
-
-// ============ MEAL BUILDER ============
-let mealIngredients = []; // { name, per100: {cal, protein, sugar}, grams }
-
-const ingredientSearchInput = document.getElementById("ingredient-search-input");
-const ingredientSearchBtn = document.getElementById("ingredient-search-btn");
-const ingredientResults = document.getElementById("ingredient-results");
-const mealIngredientsList = document.getElementById("meal-ingredients-list");
-const saveMealBtn = document.getElementById("save-meal-btn");
-const mealMsg = document.getElementById("meal-msg");
-const savedMealsList = document.getElementById("saved-meals-list");
-
-ingredientSearchBtn.addEventListener("click", async () => {
-    const query = ingredientSearchInput.value.trim();
-    if (!query) return;
-
-    ingredientResults.innerHTML = `<p class="empty-state">Searching…</p>`;
-
-    try {
-          const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=6&dataType=Foundation,SR%20Legacy`;
-          const res = await fetch(url);
-          const data = await res.json();
-
-          if (!data.foods || !data.foods.length) {
-                  ingredientResults.innerHTML = `<p class="empty-state">No results — try a simpler search term (e.g. "chicken" instead of "grilled chicken breast").</p>`;
-                  return;
-          }
-
-          ingredientResults.innerHTML = data.foods.map((food, i) => {
-                  const per100 = extractNutrients(food.foodNutrients);
-                  return `
-                          <div class="result-row">
-                                    <span class="result-row-name">${escapeHtml(food.description)}</span>
-                                              <span class="result-row-macros">${per100.cal} cal · ${per100.protein}g protein · ${per100.sugar}g sugar (per 100g)</span>
-                                                        <button class="btn-small" data-index="${i}">Add</button>
-                                                                </div>
-                                                                      `;
-          }).join("");
-
-          ingredientResults.querySelectorAll("button[data-index]").forEach(btn => {
-                  btn.addEventListener("click", () => {
-                            const food = data.foods[Number(btn.dataset.index)];
-                            const per100 = extractNutrients(food.foodNutrients);
-                            mealIngredients.push({ name: food.description, per100, grams: 100 });
-                            renderMealIngredients();
-                            ingredientResults.innerHTML = "";
-                            ingredientSearchInput.value = "";
-                  });
-          });
-    } catch (err) {
-          ingredientResults.innerHTML = `<p class="empty-state">Couldn't reach the nutrition database. Try again in a moment.</p>`;
-    }
-});
-
-function extractNutrients(foodNutrients) {
-    const find = (num) => {
-          const match = foodNutrients.find(n => String(n.nutrientNumber) === num);
-          return match ? Number(match.value) : 0;
-    };
-    return {
-          cal: Math.round(find("208")),
-          protein: Math.round(find("203") * 10) / 10,
-          sugar: Math.round(find("269") * 10) / 10,
-    };
-}
-
-function renderMealIngredients() {
-    if (!mealIngredients.length) {
-          mealIngredientsList.innerHTML = `<p class="empty-state">No ingredients added yet — search above and add some.</p>`;
-          updateMealTotals();
-          return;
-    }
-
-    mealIngredientsList.innerHTML = mealIngredients.map((ing, i) => {
-          const scaled = scaleNutrients(ing);
-          return `
-                <div class="ingredient-row">
-                        <span class="ingredient-row-name">${escapeHtml(ing.name)}</span>
-                                <input type="number" class="ingredient-row-grams" data-index="${i}" value="${ing.grams}" min="1"> g
-                                        <span class="ingredient-row-macros">${scaled.cal} cal · ${scaled.protein}g protein · ${scaled.sugar}g sugar</span>
-                                                <button class="delete-btn" data-remove="${i}" aria-label="Remove ingredient">×</button>
-                                                      </div>
-                                                          `;
-    }).join("");
-
-    mealIngredientsList.querySelectorAll("input[data-index]").forEach(input => {
-          input.addEventListener("input", () => {
-                  const i = Number(input.dataset.index);
-                  mealIngredients[i].grams = Number(input.value) || 0;
-                  renderMealIngredients();
-          });
-    });
-
-    mealIngredientsList.querySelectorAll("button[data-remove]").forEach(btn => {
-          btn.addEventListener("click", () => {
-                  mealIngredients.splice(Number(btn.dataset.remove), 1);
-                  renderMealIngredients();
-          });
-    });
-
-    updateMealTotals();
-}
-
-function scaleNutrients(ing) {
-    const factor = ing.grams / 100;
-    return {
-          cal: Math.round(ing.per100.cal * factor),
-          protein: Math.round(ing.per100.protein * factor * 10) / 10,
-          sugar: Math.round(ing.per100.sugar * factor * 10) / 10,
-    };
-}ls() {
-    const totals = mealIngredients.reduce((acc, ing) => {
-          const scaled = scaleNutrients(ing);
-          acc.cal += scaled.cal;
-          acc.protein += scaled.protein;
-          acc.sugar += scaled.sugar;
-          return acc;
-    }, { cal: 0, protein: 0, sugar: 0 });
-
-    document.getElementById("meal-total-cal").textContent = Math.round(totals.cal);
-    document.getElementById("meal-total-protein").textContent = Math.round(totals.protein * 10) / 10;
-    document.getElementById("meal-total-sugar").textContent = Math.round(totals.sugar * 10) / 10;
-    return totals;
-}
-
-saveMealBtn.addEventListener("click", async () => {
-    mealMsg.textContent = "";
-    const name = document.getElementById("meal-name").value.trim();
-
-    if (!name) {
-          mealMsg.textContent = "Give your meal a name first.";
-          mealMsg.className = "form-msg error";
-          return;
-    }
-    if (!mealIngredients.length) {
-          mealMsg.textContent = "Add at least one ingredient first.";
-          mealMsg.className = "form-msg error";
-          return;
-    }
-
-    const totals = updateMealTotals();
-
-    const { error } = await supabaseClient.from("meals").insert({
-          user_id: currentUser.id,
-          name,
-          ingredients: mealIngredients,
-          total_calories: Math.round(totals.cal),
-          total_protein_g: Math.round(totals.protein * 10) / 10,
-          total_sugar_g: Math.round(totals.sugar * 10) / 10,
-    });
-
-    if (error) {
-          mealMsg.textContent = error.message;
-          mealMsg.className = "form-msg error";
-          return;
-    }
-
-    mealMsg.textContent = "Meal saved!";
-    mealMsg.className = "form-msg success";
-    mealIngredients = [];
-    document.getElementById("meal-name").value = "";
-    renderMealIngredients();
-    loadSavedMeals();
-});
-
-async function loadSavedMeals() {
-    const { data, error } = await supabaseClient
-      .from("meals")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-          savedMealsList.innerHTML = `<p class="empty-state">Couldn't load your meals: ${error.message}</p>`;
-          return;
-    }
-
-    if (!data.length) {
-          savedMealsList.innerHTML = `<p class="empty-state">No saved meals yet — build one above.</p>`;
-          return;
-    }
-
-    savedMealsList.innerHTML = data.map(meal => `
-        <div class="saved-meal-item" data-id="${meal.id}">
-              <div class="saved-meal-main">
-                      <span class="saved-meal-name">${escapeHtml(meal.name)}</span>
-                              <span class="saved-meal-macros">${meal.total_calories} cal · ${meal.total_protein_g}g protein · ${meal.total_sugar_g}g sugar</span>
-                                    </div>
-                                          <div class="saved-meal-actions">
-                                                  <select data-meal-type="${meal.id}">
-                                                            <option value="breakfast">Breakfast</option>
-                                                                      <option value="lunch">Lunch</option>
-                                                                                <option value="dinner">Dinner</option>
-                                                                                          <option value="snack">Snack</option>
-                                                                                                  </select>
-                                                                                                          <button class="btn-small" data-log="${meal.id}">Log today</button>
-                                                                                                                  <button class="delete-btn" data-delete-meal="${meal.id}" aria-label="Delete meal">×</button>
-                                                                                                                        </div>
-                                                                                                                            </div>
-                                                                                                                              `).join("");
-
-    savedMealsList.querySelectorAll("button[data-log]").forEach(btn => {
-          btn.addEventListener("click", async () => {
-                  const id = btn.dataset.log;
-                  const meal = data.find(m => m.id === id);
-                  const mealType = savedMealsList.querySelector(`select[data-meal-type="${id}"]`).value;
-
-                  await supabaseClient.from("food_logs").insert({
-                            user_id: currentUser.id,
-                            name: meal.name,
-                            meal_type: mealType,
-                            calories: meal.total_calories,
-                            protein_g: meal.total_protein_g,
-                            sugar_g: meal.total_sugar_g,
-                            logged_at: todayStr(),
-                  });
-
-                  loadTodayLog();
-          });
-    });
-
-    savedMealsList.querySelectorAll("button[data-delete-meal]").forEach(btn => {
-          btn.addEventListener("click", async () => {
-                  await supabaseClient.from("meals").delete().eq("id", btn.dataset.deleteMeal);
-                  loadSavedMeals();
-          });
-    });
-}
-
 
 goalsForm.addEventListener("submit", (e) => {
   e.preventDefault();
@@ -418,7 +186,7 @@ async function loadTodayLog() {
 
 function renderLog(entries) {
   if (!entries.length) {
-    logList.innerHTML = `<p class="empty-state">Nothing logged yet today — add your first meal above.</p>`;
+    logList.innerHTML = `<p class="empty-state">Nothing logged yet today - add your first meal above.</p>`;
     return;
   }
 
@@ -428,8 +196,8 @@ function renderLog(entries) {
         <span class="log-item-name">${escapeHtml(e.name)}</span>
         <span class="log-item-meta">${e.meal_type}</span>
       </div>
-      <div class="log-item-macros">${e.calories} cal · ${e.protein_g}g protein · ${e.sugar_g}g sugar</div>
-      <button class="delete-btn" aria-label="Delete entry" data-id="${e.id}">×</button>
+      <div class="log-item-macros">${e.calories} cal - ${e.protein_g}g protein - ${e.sugar_g}g sugar</div>
+      <button class="delete-btn" aria-label="Delete entry" data-id="${e.id}">x</button>
     </div>
   `).join("");
 
@@ -465,4 +233,233 @@ function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
+}
+
+// ============ MEAL BUILDER ============
+let mealIngredients = []; // { name, per100: {cal, protein, sugar}, grams }
+
+const ingredientSearchInput = document.getElementById("ingredient-search-input");
+const ingredientSearchBtn = document.getElementById("ingredient-search-btn");
+const ingredientResults = document.getElementById("ingredient-results");
+const mealIngredientsList = document.getElementById("meal-ingredients-list");
+const saveMealBtn = document.getElementById("save-meal-btn");
+const mealMsg = document.getElementById("meal-msg");
+const savedMealsList = document.getElementById("saved-meals-list");
+
+ingredientSearchBtn.addEventListener("click", async () => {
+  const query = ingredientSearchInput.value.trim();
+  if (!query) return;
+
+  ingredientResults.innerHTML = `<p class="empty-state">Searching...</p>`;
+
+  try {
+    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${USDA_API_KEY}&query=${encodeURIComponent(query)}&pageSize=6&dataType=Foundation,SR%20Legacy`;
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (!data.foods || !data.foods.length) {
+      ingredientResults.innerHTML = `<p class="empty-state">No results - try a simpler search term (e.g. "chicken" instead of "grilled chicken breast").</p>`;
+      return;
+    }
+
+    ingredientResults.innerHTML = data.foods.map((food, i) => {
+      const per100 = extractNutrients(food.foodNutrients);
+      return `
+        <div class="result-row">
+          <span class="result-row-name">${escapeHtml(food.description)}</span>
+          <span class="result-row-macros">${per100.cal} cal - ${per100.protein}g protein - ${per100.sugar}g sugar (per 100g)</span>
+          <button class="btn-small" data-index="${i}">Add</button>
+        </div>
+      `;
+    }).join("");
+
+    ingredientResults.querySelectorAll("button[data-index]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const food = data.foods[Number(btn.dataset.index)];
+        const per100 = extractNutrients(food.foodNutrients);
+        mealIngredients.push({ name: food.description, per100, grams: 100 });
+        renderMealIngredients();
+        ingredientResults.innerHTML = "";
+        ingredientSearchInput.value = "";
+      });
+    });
+  } catch (err) {
+    ingredientResults.innerHTML = `<p class="empty-state">Couldn't reach the nutrition database. Try again in a moment.</p>`;
+  }
+});
+
+function extractNutrients(foodNutrients) {
+  const find = (num) => {
+    const match = foodNutrients.find(n => String(n.nutrientNumber) === num);
+    return match ? Number(match.value) : 0;
+  };
+  return {
+    cal: Math.round(find("208")),
+    protein: Math.round(find("203") * 10) / 10,
+    sugar: Math.round(find("269") * 10) / 10,
+  };
+}
+
+function renderMealIngredients() {
+  if (!mealIngredients.length) {
+    mealIngredientsList.innerHTML = `<p class="empty-state">No ingredients added yet - search above and add some.</p>`;
+    updateMealTotals();
+    return;
+  }
+
+  mealIngredientsList.innerHTML = mealIngredients.map((ing, i) => {
+    const scaled = scaleNutrients(ing);
+    return `
+      <div class="ingredient-row">
+        <span class="ingredient-row-name">${escapeHtml(ing.name)}</span>
+        <input type="number" class="ingredient-row-grams" data-index="${i}" value="${ing.grams}" min="1"> g
+        <span class="ingredient-row-macros">${scaled.cal} cal - ${scaled.protein}g protein - ${scaled.sugar}g sugar</span>
+        <button class="delete-btn" data-remove="${i}" aria-label="Remove ingredient">x</button>
+      </div>
+    `;
+  }).join("");
+
+  mealIngredientsList.querySelectorAll("input[data-index]").forEach(input => {
+    input.addEventListener("input", () => {
+      const i = Number(input.dataset.index);
+      mealIngredients[i].grams = Number(input.value) || 0;
+      renderMealIngredients();
+    });
+  });
+
+  mealIngredientsList.querySelectorAll("button[data-remove]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      mealIngredients.splice(Number(btn.dataset.remove), 1);
+      renderMealIngredients();
+    });
+  });
+
+  updateMealTotals();
+}
+
+function scaleNutrients(ing) {
+  const factor = ing.grams / 100;
+  return {
+    cal: Math.round(ing.per100.cal * factor),
+    protein: Math.round(ing.per100.protein * factor * 10) / 10,
+    sugar: Math.round(ing.per100.sugar * factor * 10) / 10,
+  };
+}
+
+function updateMealTotals() {
+  const totals = mealIngredients.reduce((acc, ing) => {
+    const scaled = scaleNutrients(ing);
+    acc.cal += scaled.cal;
+    acc.protein += scaled.protein;
+    acc.sugar += scaled.sugar;
+    return acc;
+  }, { cal: 0, protein: 0, sugar: 0 });
+
+  document.getElementById("meal-total-cal").textContent = Math.round(totals.cal);
+  document.getElementById("meal-total-protein").textContent = Math.round(totals.protein * 10) / 10;
+  document.getElementById("meal-total-sugar").textContent = Math.round(totals.sugar * 10) / 10;
+  return totals;
+}
+
+saveMealBtn.addEventListener("click", async () => {
+  mealMsg.textContent = "";
+  const name = document.getElementById("meal-name").value.trim();
+
+  if (!name) {
+    mealMsg.textContent = "Give your meal a name first.";
+    mealMsg.className = "form-msg error";
+    return;
+  }
+  if (!mealIngredients.length) {
+    mealMsg.textContent = "Add at least one ingredient first.";
+    mealMsg.className = "form-msg error";
+    return;
+  }
+
+  const totals = updateMealTotals();
+
+  const { error } = await supabaseClient.from("meals").insert({
+    user_id: currentUser.id,
+    name,
+    ingredients: mealIngredients,
+    total_calories: Math.round(totals.cal),
+    total_protein_g: Math.round(totals.protein * 10) / 10,
+    total_sugar_g: Math.round(totals.sugar * 10) / 10,
+  });
+
+  if (error) {
+    mealMsg.textContent = error.message;
+    mealMsg.className = "form-msg error";
+    return;
+  }
+
+  mealMsg.textContent = "Meal saved!";
+  mealMsg.className = "form-msg success";
+  mealIngredients = [];
+  document.getElementById("meal-name").value = "";
+  renderMealIngredients();
+  loadSavedMeals();
+});
+
+async function loadSavedMeals() {
+  const { data, error } = await supabaseClient
+    .from("meals")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    savedMealsList.innerHTML = `<p class="empty-state">Couldn't load your meals: ${error.message}</p>`;
+    return;
+  }
+
+  if (!data.length) {
+    savedMealsList.innerHTML = `<p class="empty-state">No saved meals yet - build one above.</p>`;
+    return;
+  }
+
+  savedMealsList.innerHTML = data.map(meal => `
+    <div class="saved-meal-item" data-id="${meal.id}">
+      <div class="saved-meal-main">
+        <span class="saved-meal-name">${escapeHtml(meal.name)}</span>
+        <span class="saved-meal-macros">${meal.total_calories} cal - ${meal.total_protein_g}g protein - ${meal.total_sugar_g}g sugar</span>
+      </div>
+      <div class="saved-meal-actions">
+        <select data-meal-type="${meal.id}">
+          <option value="breakfast">Breakfast</option>
+          <option value="lunch">Lunch</option>
+          <option value="dinner">Dinner</option>
+          <option value="snack">Snack</option>
+        </select>
+        <button class="btn-small" data-log="${meal.id}">Log today</button>
+        <button class="delete-btn" data-delete-meal="${meal.id}" aria-label="Delete meal">x</button>
+      </div>
+    </div>
+  `).join("");
+
+  savedMealsList.querySelectorAll("button[data-log]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.log;
+      const meal = data.find(m => m.id === id);
+      const mealType = savedMealsList.querySelector(`select[data-meal-type="${id}"]`).value;
+
+      await supabaseClient.from("food_logs").insert({
+        user_id: currentUser.id,
+        name: meal.name,
+        meal_type: mealType,
+        calories: meal.total_calories,
+        protein_g: meal.total_protein_g,
+        sugar_g: meal.total_sugar_g,
+        logged_at: todayStr(),
+      });
+
+      loadTodayLog();
+    });
+  });
+
+  savedMealsList.querySelectorAll("button[data-delete-meal]").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      await supabaseClient.from("meals").delete().eq("id", btn.dataset.deleteMeal);
+      loadSavedMeals();
+    });
+  });
 }
