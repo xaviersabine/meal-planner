@@ -233,9 +233,7 @@ function scaleNutrients(ing) {
           protein: Math.round(ing.per100.protein * factor * 10) / 10,
           sugar: Math.round(ing.per100.sugar * factor * 10) / 10,
     };
-}
-
-function updateMealTotals() {
+}ls() {
     const totals = mealIngredients.reduce((acc, ing) => {
           const scaled = scaleNutrients(ing);
           acc.cal += scaled.cal;
