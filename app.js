@@ -78,7 +78,6 @@ logoutBtn.addEventListener("click", async () => {
   await supabase.auth.signOut();
 });
 
-// React to login/logout automatically
 supabase.auth.onAuthStateChange((_event, session) => {
   currentUser = session?.user || null;
   renderAuthState();
@@ -133,7 +132,7 @@ goalsForm.addEventListener("submit", (e) => {
 // ============ FOOD LOGGING ============
 function todayStr() {
   const d = new Date();
-  return d.toISOString().split("T")[0]; // YYYY-MM-DD
+  return d.toISOString().split("T")[0];
 }
 
 foodForm.addEventListener("submit", async (e) => {
