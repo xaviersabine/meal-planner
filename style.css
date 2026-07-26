@@ -161,6 +161,8 @@ input:focus, select:focus, button:focus-visible {
   display: block;
 }
 
+.test-marker { color: red; }
+
 .form-msg {
   font-size: 0.85rem;
   min-height: 1.2em;
