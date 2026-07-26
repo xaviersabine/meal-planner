@@ -1,8 +1,9 @@
 // ============ SUPABASE SETUP ============
+// These two values connect the app to your Supabase project.
 const SUPABASE_URL = "https://pxgixzbwnwwfcvsyfykg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Z2l4emJ3bnd3ZmN2c3lmeWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwMTMyMDcsImV4cCI6MjEwMDU4OTIwN30.FTjwN7JRYkMeVtFCuGeLskeUNxMPc6PNnW90YxkAmEk";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ============ STATE ============
 let currentUser = null;
@@ -51,7 +52,7 @@ loginForm.addEventListener("submit", async (e) => {
   const email = document.getElementById("login-email").value.trim();
   const password = document.getElementById("login-password").value;
 
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
   if (error) {
     loginMsg.textContent = error.message;
     loginMsg.className = "form-msg error";
@@ -64,7 +65,7 @@ signupForm.addEventListener("submit", async (e) => {
   const email = document.getElementById("signup-email").value.trim();
   const password = document.getElementById("signup-password").value;
 
-  const { error } = await supabase.auth.signUp({ email, password });
+  const { error } = await supabaseClient.auth.signUp({ email, password });
   if (error) {
     signupMsg.textContent = error.message;
     signupMsg.className = "form-msg error";
@@ -75,10 +76,11 @@ signupForm.addEventListener("submit", async (e) => {
 });
 
 logoutBtn.addEventListener("click", async () => {
-  await supabase.auth.signOut();
+  await supabaseClient.auth.signOut();
 });
 
-supabase.auth.onAuthStateChange((_event, session) => {
+// React to login/logout automatically
+supabaseClient.auth.onAuthStateChange((_event, session) => {
   currentUser = session?.user || null;
   renderAuthState();
 });
@@ -132,7 +134,7 @@ goalsForm.addEventListener("submit", (e) => {
 // ============ FOOD LOGGING ============
 function todayStr() {
   const d = new Date();
-  return d.toISOString().split("T")[0];
+  return d.toISOString().split("T")[0]; // YYYY-MM-DD
 }
 
 foodForm.addEventListener("submit", async (e) => {
@@ -149,7 +151,7 @@ foodForm.addEventListener("submit", async (e) => {
     logged_at: todayStr(),
   };
 
-  const { error } = await supabase.from("food_logs").insert(entry);
+  const { error } = await supabaseClient.from("food_logs").insert(entry);
   if (error) {
     foodMsg.textContent = error.message;
     foodMsg.className = "form-msg error";
@@ -163,7 +165,7 @@ foodForm.addEventListener("submit", async (e) => {
 });
 
 async function loadTodayLog() {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("food_logs")
     .select("*")
     .eq("logged_at", todayStr())
@@ -198,7 +200,7 @@ function renderLog(entries) {
   logList.querySelectorAll(".delete-btn").forEach(btn => {
     btn.addEventListener("click", async () => {
       const id = btn.dataset.id;
-      await supabase.from("food_logs").delete().eq("id", id);
+      await supabaseClient.from("food_logs").delete().eq("id", id);
       loadTodayLog();
     });
   });
