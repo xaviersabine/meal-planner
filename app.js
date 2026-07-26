@@ -1,4 +1,4 @@
-// ============ SUPABASE SETUP ============
+——··×…—··—··×—··×// ============ SUPABASE SETUP ============
 // These two values connect the app to your Supabase project.
 const SUPABASE_URL = "https://pxgixzbwnwwfcvsyfykg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB4Z2l4emJ3bnd3ZmN2c3lmeWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUwMTMyMDcsImV4cCI6MjEwMDU4OTIwN30.FTjwN7JRYkMeVtFCuGeLskeUNxMPc6PNnW90YxkAmEk";
