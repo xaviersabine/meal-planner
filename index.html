@@ -86,53 +86,41 @@
     <button type="submit" class="btn-secondary">Save goals</button>
   </form>
 
-  <section class="log-section">
-    <h2 class="section-title">Add a food</h2>
+  <!-- ============ TAB NAV ============ -->
+  <nav class="view-nav" aria-label="Sections">
+    <button class="view-nav-btn is-active" data-view="log">Log</button>
+    <button class="view-nav-btn" data-view="build">Build a Meal</button>
+    <button class="view-nav-btn" data-view="meals">Saved Meals</button>
+  </nav>
+
+  <!-- ============ LOG VIEW ============ -->
+  <section id="view-log" class="view-panel">
     <form id="food-form" class="food-form">
-      <label class="grow">Food name
-        <input type="text" id="food-name" placeholder="e.g. Grilled chicken breast" required>
-      </label>
-      <label>Meal
-        <select id="food-meal">
-          <option value="breakfast">Breakfast</option>
-          <option value="lunch">Lunch</option>
-          <option value="dinner">Dinner</option>
-          <option value="snack">Snack</option>
-        </select>
-      </label>
-      <label>Calories
-        <input type="number" id="food-cal" min="0" step="1" required>
-      </label>
-      <label>Protein (g)
-        <input type="number" id="food-protein" min="0" step="0.1" required>
-      </label>
-      <label>Sugar (g)
-        <input type="number" id="food-sugar" min="0" step="0.1" required>
-      </label>
-      <button type="submit" class="btn-primary food-submit">Add to log</button>
+      <input type="text" id="food-name" placeholder="Food name" required class="grow">
+      <select id="food-meal">
+        <option value="breakfast">Breakfast</option>
+        <option value="lunch">Lunch</option>
+        <option value="dinner">Dinner</option>
+        <option value="snack">Snack</option>
+      </select>
+      <input type="number" id="food-cal" min="0" step="1" placeholder="Cal" required>
+      <input type="number" id="food-protein" min="0" step="0.1" placeholder="Protein g" required>
+      <input type="number" id="food-sugar" min="0" step="0.1" placeholder="Sugar g" required>
+      <button type="submit" class="btn-primary food-submit">Add</button>
     </form>
     <p class="form-msg" id="food-msg"></p>
-  </section>
 
-  <section class="log-section">
-    <h2 class="section-title">Today's log</h2>
     <div id="log-list" class="log-list">
       <p class="empty-state">Nothing logged yet today — add your first meal above.</p>
     </div>
   </section>
 
-  <section class="log-section">
-    <h2 class="section-title">Build a meal</h2>
-    <p class="section-sub">Search real ingredients from the USDA nutrition database, combine them, and save the meal to reuse anytime.</p>
-
-    <label class="meal-name-label">Meal name
-      <input type="text" id="meal-name" placeholder="e.g. Sunday meal prep bowl">
-    </label>
+  <!-- ============ BUILD VIEW ============ -->
+  <section id="view-build" class="view-panel" hidden>
+    <input type="text" id="meal-name" placeholder="Meal name (e.g. Sunday meal prep bowl)" class="full-input">
 
     <div class="ingredient-search">
-      <label class="grow">Search ingredients
-        <input type="text" id="ingredient-search-input" placeholder="e.g. chicken breast, raw">
-      </label>
+      <input type="text" id="ingredient-search-input" placeholder="Search ingredients (e.g. chicken breast, raw)" class="grow">
       <button id="ingredient-search-btn" class="btn-secondary" type="button">Search</button>
     </div>
     <p class="hint-line">Nutrition shown is per 100g from the USDA database — adjust grams below to match your portion.</p>
@@ -153,10 +141,10 @@
     <p class="form-msg" id="meal-msg"></p>
   </section>
 
-  <section class="log-section">
-    <h2 class="section-title">Your saved meals</h2>
+  <!-- ============ SAVED MEALS VIEW ============ -->
+  <section id="view-meals" class="view-panel" hidden>
     <div id="saved-meals-list" class="log-list">
-      <p class="empty-state">No saved meals yet — build one above.</p>
+      <p class="empty-state">No saved meals yet — build one in the "Build a Meal" tab.</p>
     </div>
   </section>
 
